@@ -176,7 +176,7 @@
     30% { transform: translateY(-6px); }
   }
 
-  /* ── Suggestion chips ── */
+  /* ── Suggestion chips — NOW BUTTONS ── */
   .suggestions {
     display: flex;
     flex-wrap: wrap;
@@ -184,7 +184,7 @@
     margin-top: 9px;
   }
 
-  .suggestion-chip {
+  button.suggestion-chip {
     padding: 6px 12px;
     background: var(--yellow-light);
     color: var(--black);
@@ -196,12 +196,22 @@
     cursor: pointer;
     transition: all 0.15s;
     box-shadow: 2px 2px 0 var(--black);
+    text-align: left;
+    /* reset default button styles */
+    appearance: none;
+    -webkit-appearance: none;
+    line-height: 1.4;
   }
 
-  .suggestion-chip:hover {
+  button.suggestion-chip:hover {
     background: var(--yellow);
     box-shadow: 1px 1px 0 var(--black);
     transform: translate(1px, 1px);
+  }
+
+  button.suggestion-chip:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
   }
 
   /* ── Input bar ── */
@@ -307,7 +317,7 @@
 <div class="powered">Powered by Claude AI · Asset Assign Help</div>
 
 <script>
-// ✏️  PASTE YOUR CLOUDFLARE WORKER URL HERE (step 8 in cloudflare-worker.js instructions)
+// ✏️  PASTE YOUR CLOUDFLARE WORKER URL HERE
 const WORKER_URL = "https://asset-assign.letnicolehelp.workers.dev/";
 
 const SYSTEM_PROMPT = `You are a friendly, knowledgeable support assistant for Asset Assign — a rental inventory tracking tool built specifically for balloon artists and event decor professionals. These are people who rent out marquee letters, numbers, symbols, backdrops, framework, props, chairs, and similar event items.
@@ -363,7 +373,6 @@ Always be warm and encouraging. If a question is about a specific bug, billing i
 let messages  = [];
 let isLoading = false;
 
-// Boot straight into chat
 window.addEventListener('DOMContentLoaded', () => {
   addBotMessage(
     "Hi there! 👋 Welcome to Asset Assign support. Ask me anything — setting up your inventory, using the phrase checker, managing reservations, pricing, and more!",
@@ -400,8 +409,11 @@ function handleKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 }
 
+/* ── Called by suggestion buttons ── */
 function askQuestion(q) {
-  document.getElementById('msgInput').value = q;
+  const input = document.getElementById('msgInput');
+  input.value = q;
+  autoResize(input);
   sendMessage();
 }
 
@@ -411,10 +423,13 @@ function addBotMessage(text, chips = []) {
   const div = document.createElement('div');
   div.className = 'message bot';
 
+  // Build chips as <button> elements so they work inside Notion iframes
   const chipsHtml = chips.length
-    ? `<div class="suggestions">${chips.map(c =>
-        `<span class="suggestion-chip" onclick="askQuestion(${JSON.stringify(c)})">${escapeHtml(c)}</span>`
-      ).join('')}</div>`
+    ? `<div class="suggestions">${chips.map(c => {
+        const safe = escapeHtml(c);
+        const json = JSON.stringify(c);   // safely quoted for onclick
+        return `<button class="suggestion-chip" type="button" onclick="askQuestion(${json})">${safe}</button>`;
+      }).join('')}</div>`
     : '';
 
   div.innerHTML = `
